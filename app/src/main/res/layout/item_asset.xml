@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="8dp"
+    android:gravity="center">
+
+    <ImageView
+        android:id="@+id/img_asset"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:scaleType="centerCrop"
+        android:background="@drawable/bg_image_placeholder"
+        />
+
+    <!-- Claimed Tag -->
+    <TextView
+        android:id="@+id/tv_claimed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="CLAIMED"
+        android:textColor="@android:color/white"
+        android:textSize="12sp"
+        android:padding="4dp"
+        android:visibility="gone"
+        android:background="@drawable/bg_claimed_tag"
+        android:layout_gravity="top|end"
+        android:layout_margin="4dp"
+        android:textStyle="bold"/>
+
+    <TextView
+        android:id="@+id/tv_asset_id"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Asset ID"
+        android:textSize="14sp"
+        android:singleLine="true"
+        android:ellipsize="marquee"
+        android:marqueeRepeatLimit="marquee_forever"
+        android:scrollHorizontally="true"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:freezesText="true"
+        android:gravity="center"
+        android:layout_gravity="bottom|center_horizontal"/>
+</LinearLayout>

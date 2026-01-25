@@ -1,0 +1,31 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/nfcExportKeyview"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_gradient"
+    android:orientation="vertical">
+
+    <!-- Heading at the top -->
+    <TextView
+        android:id="@+id/tvHeading_exp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="40dp"
+        android:layout_marginBottom="20dp"
+        android:fontFamily="cursive"
+        android:text="Export Key to NFC"
+        android:textColor="#FFFFFF"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <!-- Pulse animation fills remaining space -->
+    <com.starconsolidateden.travelhunt.NFCPulseAnimation
+        android:id="@+id/nfcPulse_exp"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginBottom="40dp"/> <!-- optional bottom spacing -->
+
+</LinearLayout>
