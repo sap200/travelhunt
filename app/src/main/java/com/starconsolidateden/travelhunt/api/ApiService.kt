@@ -3,6 +3,7 @@ package com.starconsolidateden.travelhunt.api;
 import com.starconsolidateden.travelhunt.api.models.ClaimRequest
 import com.starconsolidateden.travelhunt.api.models.ClaimResponse
 import com.starconsolidateden.travelhunt.api.models.DigitalAssetResponse
+import com.starconsolidateden.travelhunt.api.models.GoogleSignInRequest
 import com.starconsolidateden.travelhunt.api.models.LoginRequest
 import com.starconsolidateden.travelhunt.api.models.LoginResponse
 import com.starconsolidateden.travelhunt.api.models.ObjectIdLoginRequest
@@ -27,6 +28,10 @@ interface ApiService {
 
     @POST("/api/auth/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
+
+
+    @POST("/api/auth/google")
+    suspend fun googleLogin(@Body request: GoogleSignInRequest): Response<LoginResponse>
 
      @GET("/api/assets/list-unclaimed") // replace with your GET API path
      fun getDigitalAssets(@Header("Authorization") token: String): Call<List<DigitalAssetResponse>>
@@ -63,4 +68,6 @@ interface ApiService {
 
         @Part image: MultipartBody.Part
     ): Response<DigitalAssetResponse>
+
+
 }

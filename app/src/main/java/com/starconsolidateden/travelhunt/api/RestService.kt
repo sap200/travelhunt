@@ -7,6 +7,7 @@ import com.google.gson.Gson
 import com.starconsolidateden.travelhunt.api.models.ClaimRequest
 import com.starconsolidateden.travelhunt.api.models.ClaimResponse
 import com.starconsolidateden.travelhunt.api.models.DigitalAssetResponse
+import com.starconsolidateden.travelhunt.api.models.GoogleSignInRequest
 import com.starconsolidateden.travelhunt.api.models.LoginRequest
 import com.starconsolidateden.travelhunt.api.models.LoginResponse
 import com.starconsolidateden.travelhunt.api.models.ObjectIdLoginRequest
@@ -258,9 +259,27 @@ object RestService {
             e.printStackTrace()
             Result.failure(e)
         }
+
+
     }
 
+    suspend fun googleLogin(token: String): Result<LoginResponse> {
+        return try {
+            val response = api.googleLogin(GoogleSignInRequest(token))
+            if(response.isSuccessful) {
+                Result.success(response.body()!!)
+            } else {
+                val errorBodyString = response.errorBody()?.string()
+                val errorResponse = Gson().fromJson(errorBodyString, LoginResponse::class.java)
 
+                Log.d("GOOGLE LOGIN ERROR", errorResponse.errorMessage)
+                val errorMessage = errorResponse?.errorMessage ?: "Unknown error"
+                Result.failure(Exception("${response.code()} $errorMessage"))
+            }
+        } catch(e: Exception) {
+            Result.failure(e)
+        }
+    }
 
 
 
