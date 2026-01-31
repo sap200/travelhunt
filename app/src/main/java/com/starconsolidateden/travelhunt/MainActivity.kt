@@ -15,16 +15,21 @@ import com.starconsolidateden.travelhunt.utils.SecurePrefs
 import com.google.android.gms.common.api.ApiException
 import android.util.Log
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.starconsolidateden.travelhunt.api.RestService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
+
 
 private const val TOKEN_EXPIRY_MS = 36_000_000L // 10 hours
 
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     private lateinit var googleSignInClient: GoogleSignInClient
     private lateinit var btnGoogleLogin: Button
 
@@ -36,12 +41,11 @@ class MainActivity : ComponentActivity() {
 
 
         if (isUserLoggedIn()) {
-            val intent = Intent(this, MapActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
-        }
-
-        if (!isUserLoggedIn()) {
+//            val intent = Intent(this, MapActivity::class.java)
+//            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+//            startActivity(intent)
+            authenticateWithBiometric()
+        }else  {
             SecurePrefs.clear()
         }
 
@@ -166,6 +170,73 @@ class MainActivity : ComponentActivity() {
 
         return hasJwt && hasEmail && hasAddress && hasObjectId && !isExpired
     }
+
+    private fun authenticateWithBiometric() {
+        val biometricManager = BiometricManager.from(this)
+
+        if (
+            biometricManager.canAuthenticate(
+                BiometricManager.Authenticators.BIOMETRIC_STRONG
+            ) != BiometricManager.BIOMETRIC_SUCCESS
+        ) {
+            // Device has no fingerprint → allow access
+            goToMap()
+            return
+        }
+
+        val executor = ContextCompat.getMainExecutor(this)
+
+        val biometricPrompt = BiometricPrompt(
+            this,
+            executor,
+            object : BiometricPrompt.AuthenticationCallback() {
+
+                override fun onAuthenticationSucceeded(
+                    result: BiometricPrompt.AuthenticationResult
+                ) {
+                    super.onAuthenticationSucceeded(result)
+                    goToMap()
+                }
+
+                override fun onAuthenticationFailed() {
+                    super.onAuthenticationFailed()
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Fingerprint not recognized",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+
+                override fun onAuthenticationError(
+                    errorCode: Int,
+                    errString: CharSequence
+                ) {
+                    super.onAuthenticationError(errorCode, errString)
+                    Toast.makeText(
+                        this@MainActivity,
+                        errString,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        )
+
+        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle("Confirm your identity")
+            .setSubtitle("Authenticate to continue to TravelHunt")
+            .setNegativeButtonText("Use login instead")
+            .build()
+
+        biometricPrompt.authenticate(promptInfo)
+    }
+
+    private fun goToMap() {
+        val intent = Intent(this, MapActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+    }
+
+
 
 
 }
