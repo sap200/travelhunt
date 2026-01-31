@@ -24,15 +24,24 @@ import kotlinx.coroutines.withContext
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
-
+import com.airbnb.lottie.LottieAnimationView
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import android.widget.ImageView
 
 private const val TOKEN_EXPIRY_MS = 36_000_000L // 10 hours
 
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var googleSignInClient: GoogleSignInClient
     private lateinit var btnGoogleLogin: Button
-
+    private lateinit var lottieTravel: LottieAnimationView
+    private lateinit var sensorManager: SensorManager
+    private var accelerometer: Sensor? = null
+    private var motionEnabled = true  // freeze after NFC scan
+    private lateinit var tiltElement: ImageView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,6 +58,7 @@ class MainActivity : AppCompatActivity() {
             SecurePrefs.clear()
         }
 
+        lottieTravel = findViewById(R.id.lottieTravel)
         val btnSignup = findViewById<Button>(R.id.btnSignup)
         val btnLogin = findViewById<Button>(R.id.btnLogin)
         val btnNFCLogin = findViewById<Button>(R.id.btnNFCLogin)
@@ -85,9 +95,29 @@ class MainActivity : AppCompatActivity() {
 
         // on load we will check the shared preference, if the keys exists then, go to Mapping page.
         // else, stay in the login page.
+        // --- Sensor setup ---
+        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
     }
 
-    // 🔹 NEW: Handle Google login result
+    override fun onResume() {
+        super.onResume()
+        accelerometer?.let {
+            sensorManager.registerListener(
+                this,
+                it,
+                SensorManager.SENSOR_DELAY_GAME
+            )
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        sensorManager.unregisterListener(this)
+    }
+
+
+        // 🔹 NEW: Handle Google login result
     private val googleSignInLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
@@ -236,7 +266,36 @@ class MainActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
+    override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
+    }
 
+    override fun onSensorChanged(p0: SensorEvent?) {
+        if (!motionEnabled) {
+            Toast.makeText(this@MainActivity,"Motion not enabled", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val x = p0?.values[0]   // left-right tilt
+        val y = p0?.values[1]   // forward-back tilt
+        if(x == null || y == null) {
+            Toast.makeText(this@MainActivity,"X or Y NULL", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val factor = 15f;
+        val maxOffset = 50f       // max translation in px
+        val translateX = (-x * factor).coerceIn(-maxOffset, maxOffset)
+        val translateY = (y * factor).coerceIn(-maxOffset, maxOffset)
+        val rotation = (-x * 15f).coerceIn(-30f, 30f)  // bigger rotation for visibility
+
+        lottieTravel.animate()
+            .translationX(translateX)
+            .translationY(translateY)
+            .rotation(rotation)
+            .setDuration(80)
+            .start()
+
+    }
 
 
 }
