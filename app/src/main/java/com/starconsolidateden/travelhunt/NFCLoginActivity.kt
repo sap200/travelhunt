@@ -12,12 +12,24 @@ import androidx.lifecycle.lifecycleScope
 import com.starconsolidateden.travelhunt.api.RestService
 import com.starconsolidateden.travelhunt.utils.SecurePrefs
 import kotlinx.coroutines.launch
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import android.widget.ImageView
 
 private const val TOKEN_EXPIRY_MS = 36_000_000L // 10 hours
 
-class NFCLoginActivity : AppCompatActivity() {
+class NFCLoginActivity : AppCompatActivity(), SensorEventListener {
 
     private var nfcAdapter: NfcAdapter? = null
+
+    // --- Sensor + animation ---
+    private lateinit var sensorManager: SensorManager
+    private var accelerometer: Sensor? = null
+    private var motionEnabled = true  // freeze after NFC scan
+    private lateinit var tiltElement: ImageView
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,6 +43,13 @@ class NFCLoginActivity : AppCompatActivity() {
             finish()
             return
         }
+
+        // --- Sensor setup ---
+        tiltElement = findViewById(R.id.tiltElement)
+        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+
+
     }
 
     override fun onResume() {
@@ -43,11 +62,23 @@ class NFCLoginActivity : AppCompatActivity() {
         )
 
         nfcAdapter?.enableForegroundDispatch(this, pendingIntent, null, null)
+
+        // --- Register accelerometer ---
+        accelerometer?.let {
+            sensorManager.registerListener(
+                this,
+                it,
+                SensorManager.SENSOR_DELAY_GAME
+            )
+        }
+
     }
 
     override fun onPause() {
         super.onPause()
         nfcAdapter?.disableForegroundDispatch(this)
+        sensorManager.unregisterListener(this)
+
     }
 
     // Handle NFC tag when scanned
@@ -109,4 +140,37 @@ class NFCLoginActivity : AppCompatActivity() {
             ultralight.close()
         }
     }
+
+    override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
+    }
+
+    override fun onSensorChanged(p0: SensorEvent?) {
+        if (!motionEnabled) {
+            Toast.makeText(this@NFCLoginActivity,"Motion not enabled", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val x = p0?.values[0]   // left-right tilt
+        val y = p0?.values[1]   // forward-back tilt
+        if(x == null || y == null) {
+            Toast.makeText(this@NFCLoginActivity,"X or Y NULL", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val factor = 15f;
+        val maxOffset = 50f       // max translation in px
+        val translateX = (-x * factor).coerceIn(-maxOffset, maxOffset)
+        val translateY = (y * factor).coerceIn(-maxOffset, maxOffset)
+        val rotation = (-x * 15f).coerceIn(-30f, 30f)  // bigger rotation for visibility
+
+        tiltElement.animate()
+            .translationX(translateX)
+            .translationY(translateY)
+            .rotation(rotation)
+            .setDuration(80)
+            .start()
+
+
+    }
+
 }
